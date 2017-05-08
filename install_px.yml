@@ -1,0 +1,39 @@
+- hosts: all
+  remote_user: root
+  tasks:
+    - name: get latest build version
+      shell: "curl -s http://thfiles/builds/PX/10.2/ | egrep '[DIR]' | tail -n 1 | egrep -o '[0-9.]+_[0-9.]+_[0-9a-zA-Z]+'"
+      register: latest_build
+
+    - name: check px status
+      find:
+        paths: "/usr/px"
+      register: px_folder
+
+    - debug: msg="Matches found {{ px_folder.matched }}"
+
+    - name: stop & clean px
+      shell: "{{ item }}"
+      args:
+        chdir: /usr/px
+      with_items:
+        - "./gwb stopServer"
+        - "rm -rf /usr/px/*"
+      ignore_errors: yes # ignore error because of gwb stop server error if it not running
+      when: px_folder.matched > 0
+
+    - name: download ExampleCenter latest build
+      get_url:
+        url: "http://thfiles/builds/PX/10.2/{{ latest_build.stdout_lines[0] }}/ExampleCenter.zip"
+        dest: /root/
+
+    - name: unzip ExampleCenter
+      unarchive:
+        src: /root/ExampleCenter.zip
+        dest: /usr/px/
+        remote_src: yes
+
+    - name: start px
+      shell: "nohup ./gwb runServer > runServer.log 2>&1 &"
+      args:
+        chdir: /usr/px

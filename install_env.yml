@@ -1,0 +1,86 @@
+- hosts: all
+  remote_user: root
+  tasks:
+    - name: switch selinux to permissive mode
+      selinux:
+        policy: targeted
+        state: permissive
+
+    - name:
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      with_items:
+        - iptables
+        - firewalld
+
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - wget
+        - nano
+        - unzip
+        - curl
+        - net-tools
+
+    - name: download jdk, maven, gradle
+      get_url:
+        url: "{{ item }}"
+        dest: /root/
+      with_items:
+        - http://thfiles-fc/builds/support/jdk-8u112-linux-x64.rpm
+        - http://thfiles-fc/builds/support/apache-maven-3.5.0-bin.zip
+        - http://thfiles-fc/builds/support/gradle-3.5-bin.zip
+
+    - name: install java 8.112
+      yum:
+        name: /root/jdk-8u112-linux-x64.rpm
+        state: installed
+
+    - name: set java home
+      lineinfile:
+        dest: /root/.bashrc
+        line: "{{ item }}"
+      with_items:
+        - 'export JAVA_HOME=/usr/java/jdk1.8.0_112'
+        - 'export PATH=/usr/java/jdk1.8.0_112/bin:$PATH'
+
+    - name: create dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+      with_items:
+        - '/usr/maven'
+        - '/usr/gradle'
+        - '/usr/px'
+
+    - name: install maven 3.5.0
+      unarchive:
+        src: /root/apache-maven-3.5.0-bin.zip
+        dest: /usr/maven/
+        remote_src: yes
+
+    - name: set maven home
+      lineinfile:
+        dest: /root/.bashrc
+        line: "{{ item }}"
+      with_items:
+        - 'export MAVEN_HOME=/usr/maven/apache-maven-3.5.0'
+        - 'export PATH=/usr/maven/apache-maven-3.5.0/bin:$PATH'
+
+    - name: install gradle 3.5
+      unarchive:
+        src: /root/gradle-3.5-bin.zip
+        dest: /usr/gradle/
+        remote_src: yes
+
+    - name: set gradle home
+      lineinfile:
+        dest: /root/.bashrc
+        line: "{{ item }}"
+      with_items:
+        - 'export GRADLE_HOME=/usr/gradle/gradle-3.5'
+        - 'export PATH=/usr/gradle/gradle-3.5/bin:$PATH'
