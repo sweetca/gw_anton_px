@@ -1,0 +1,19 @@
+jdk_file_url: http://thfiles-fc/builds/support/jdk-8u112-linux-x64.rpm
+jdk_file: jdk-8u112-linux-x64.rpm
+jdk_home: /usr/java/jdk1.8.0_112
+
+mvn_file_url: http://thfiles-fc/builds/support/apache-maven-3.5.0-bin.zip
+mvn_file: apache-maven-3.5.0-bin.zip
+mvn_home: /usr/maven/apache-maven-3.5.0
+mvn_dir: /usr/maven
+
+gradle_file_url: http://thfiles-fc/builds/support/gradle-3.5-bin.zip
+gradle_file: gradle-3.5-bin.zip
+gradle_home: /usr/gradle/gradle-3.5
+gradle_dir: /usr/gradle
+
+px_file_url: sdfsd
+px_file: ExampleCenter.zip
+px_dir: /usr/px
+
+app_port: 8480

@@ -1,0 +1,80 @@
+- name: switch selinux to permissive mode
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: swtich off firewall
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+- name: install packages
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - wget
+    - nano
+    - unzip
+    - curl
+    - net-tools
+
+- name: download jdk, maven, gradle
+  get_url:
+    url: "{{ item }}"
+    dest: /root/
+  with_items:
+    - "{{ jdk_file_url }}"
+    - "{{ mvn_file_url }}"
+    - "{{ gradle_file_url }}"
+
+- name: create dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ mvn_dir }}"
+    - "{{ gradle_dir }}"
+    - "{{ px_dir }}"
+
+- name: install java
+  yum:
+    name: "/root/{{ jdk_file }}"
+    state: installed
+
+- name: set java home
+  lineinfile:
+    dest: /root/.bashrc
+    line: "{{ item }}"
+  with_items:
+    - "export JAVA_HOME={{ jdk_home }}"
+    - "export PATH={{ jdk_home }}/bin:$PATH"
+
+- name: install maven
+  unarchive:
+    src: "/root/{{ mvn_file }}"
+    dest: "{{ mvn_dir }}"
+    remote_src: yes
+
+- name: set maven home
+  lineinfile:
+    dest: /root/.bashrc
+    line: "{{ item }}"
+  with_items:
+    - "export MAVEN_HOME={{ mvn_home }}"
+    - "export PATH={{ mvn_home }}/bin:$PATH"
+
+- name: install gradle
+  unarchive:
+    src: "/root/{{ gradle_file }}"
+    dest: "{{ gradle_dir }}"
+    remote_src: yes
+
+- name: set gradle home
+  lineinfile:
+    dest: /root/.bashrc
+    line: "{{ item }}"
+  with_items:
+    - "export GRADLE_HOME={{ gradle_home }}"
+    - "export PATH={{ gradle_home }}/bin:$PATH"

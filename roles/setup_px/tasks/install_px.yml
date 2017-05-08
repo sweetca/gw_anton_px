@@ -1,0 +1,44 @@
+- name: get latest build version
+  shell: "curl -s http://thfiles/builds/PX/10.2/ | egrep '[DIR]' | tail -n 1 | egrep -o '[0-9.]+_[0-9.]+_[0-9a-zA-Z]+'"
+  register: latest_build
+
+- debug: msg="Build version - {{ latest_build.stdout_lines[0] }}"
+
+- name: check px status
+  find:
+    paths: "{{ px_dir }}"
+  register: px_folder
+
+- debug: msg="Files to remove - {{ px_folder.matched }}"
+
+- name: stop and clean PX
+  shell: "{{ item }}"
+  args:
+    chdir: "{{ px_dir }}"
+  with_items:
+    - "./gwb stopServer"
+    - "rm -rf {{ px_dir }}/*"
+  ignore_errors: yes # ignore error because of gwb stop server error if it not running
+  when: px_folder.matched > 0
+
+- name: download ExampleCenter latest build
+  get_url:
+    url: "http://thfiles/builds/PX/10.2/{{ latest_build.stdout_lines[0] }}/ExampleCenter.zip"
+    dest: /root/
+
+- name: unzip ExampleCenter
+  unarchive:
+    src: "/root/{{ px_file }}"
+    dest: "{{ px_dir }}"
+    remote_src: yes
+
+- name: start px
+  shell: "nohup ./gwb runServer > runServer.log 2>&1 &"
+  args:
+    chdir: "{{ px_dir }}"
+
+- wait_for: wait for PX on port 8480
+    host: "{{ inventory_hostname }}"
+    port: "{{ app_host }}"
+    delay: 60
+    timeout: 400
