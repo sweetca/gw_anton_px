@@ -2,8 +2,6 @@
   shell: "curl -s http://thfiles/builds/PX/10.2/ | egrep '[DIR]' | tail -n 1 | egrep -o '[0-9.]+_[0-9.]+_[0-9a-zA-Z]+'"
   register: latest_build
 
-- debug: msg="Build version - {{ latest_build.stdout_lines[0] }}"
-
 - name: check px status
   find:
     paths: "{{ px_dir }}"
@@ -21,7 +19,17 @@
   ignore_errors: yes # ignore error because of gwb stop server error if it not running
   when: px_folder.matched > 0
 
-- name: download ExampleCenter latest build
+- name: choose latest build
+  set_fact:
+    build: "{{ latest_build.stdout_lines[0] }}"
+  when: px_build_number|default("") == ""
+
+- name: choose exact build
+  set_fact:
+    build: "{{ px_build_number }}"
+  when: px_build_number|default("") != ""
+
+- name: download ExampleCenter latest build thfiles/builds/PX/10.2/{{ build }}/ExampleCenter.zip
   get_url:
     url: "http://thfiles/builds/PX/10.2/{{ latest_build.stdout_lines[0] }}/ExampleCenter.zip"
     dest: /root/
@@ -33,12 +41,22 @@
     remote_src: yes
 
 - name: start px
-  shell: "nohup ./gwb runServer > runServer.log 2>&1 &"
+  shell: nohup ./gwb runServer > {{ px_log_dir }}/server.log 2>&1 &
   args:
     chdir: "{{ px_dir }}"
 
-- wait_for: wait for PX on port 8480
+- wait_for:
     host: "{{ inventory_hostname }}"
-    port: "{{ app_host }}"
+    port: "{{ app_port }}"
     delay: 60
     timeout: 400
+
+- name: slack
+  slack:
+    token: "{{ slack_token }}"
+    domain: hooks.slack.com
+    color: good
+    username: 'jenkins deploy'
+    icon_emoji: ':guidewire_g:'
+    msg: "*<http://{{ inventory_hostname }}:{{ app_port }}/px/ExampleCenter.do|{{ inventory_hostname }}>* \n `{{ build }}`"
+  when: slack_token|default("") != ""

@@ -37,6 +37,7 @@
     - "{{ mvn_dir }}"
     - "{{ gradle_dir }}"
     - "{{ px_dir }}"
+    - "{{ px_log_dir }}"
 
 - name: install java
   yum:

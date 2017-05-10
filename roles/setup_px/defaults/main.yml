@@ -16,4 +16,10 @@ px_file_url: sdfsd
 px_file: ExampleCenter.zip
 px_dir: /usr/px
 
+px_log_dir: /usr/px_logs
+
 app_port: 8480
+serv_log_port: 7777
+
+px_build_number:
+slack_token:
